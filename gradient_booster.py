@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 14 09:19:54 2022
+Created on Wed Aug 10 09:20:49 2022
 
 @author: vivianliu
 """
@@ -11,12 +11,13 @@ import datetime as dt
 from gradient import create_gradient
 
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import r2_score
 
-#This function takes cleaned data and runs a random forest regressor on it.
+#This function takes cleaned data and runs a gradient boosting regressor on it.
 #It can also plot the given predicted values
 #Parameters
 #   data: a data frame or string pathname type
@@ -29,38 +30,26 @@ from sklearn.metrics import r2_score
 #   plot: boolean input indicating whether or not to plot the prediction and true data. Default is False
 #Returns:
 #   Does not return a value. Prints out measurements of accuracy as well as feature importances
-def run_random_forest(data, target_variable, features = all, drop_features = None, estimators = 150, select = None, rdm_state = 16, test_portion = 0.25, plot = False):
-    print("Start random forest")
+def run_gradient_boost(data, target_variable, features = all, drop_features = None, estimators = 150, rdm_state = 16, select = None, test_portion = 0.25, plot = False):
+    print("Start gradient boost")
     #Create a dataframe based on data input method
     if (type(data) == pd.core.frame.DataFrame):
         merged_df = data;
     elif (type(data) == str):
         merged_df = pd.read_csv(data)
     
+    #Drop any bad values
+    merged_df = merged_df[merged_df[target_variable].notna()]
+    
     #Sort by data for easier reading
     merged_df = merged_df.sort_values(by = "Datetime")
     merged_df = merged_df.reset_index(drop = True)
     
+    
     #Get rid of any rows outside of expected date range
     merged_df = merged_df[~(merged_df["Datetime"] < '2002-05-01')]
     
-    #Optional code that creates a new columns with the gradients of inputted features
-    """
-    merged_df = create_gradient(merged_df, target_variable, features = ["SYM/H_INDEX_nT"])
-    """
-    
-    #Optional code that shifts a feature backwards by a certain number of minutes
-    """
-    return_df = merged_df
-    sym_h = merged_df["SYM/H_INDEX_nT"]
-    merged_df = merged_df.drop("SYM/H_INDEX_nT", axis = 1)
-    sym_h = sym_h.iloc[0:-1400]
-    
-    merged_df = merged_df.iloc[1400:]
-    
-    merged_df["SYM/H_INDEX_nT"] = sym_h
-    merged_df = merged_df.dropna(axis = 0, how = "any")
-    """
+    #merged_df = create_gradient(merged_df, target_variable, features = ["SYM/H_INDEX_nT"])
     
     #Remove datetime column for random forest
     merged_df = merged_df.drop("Datetime", axis = 1)
@@ -81,10 +70,14 @@ def run_random_forest(data, target_variable, features = all, drop_features = Non
             using_features.append(element)
         features_list = using_features
     
-    merged_df = merged_df[features_list]
-
+    print(features_list)
     
-    ###Set training and testing groups###
+    merged_df = merged_df[features_list]
+    
+    print(merged_df)
+    
+    graph_df = merged_df
+    features_list_u = features_list
     
     #If no testing set specified, create random testing and training groups
     if (select == None):
@@ -105,19 +98,17 @@ def run_random_forest(data, target_variable, features = all, drop_features = Non
     
     #Drop features that user specifies so that they aren't included in the random forest
     if (drop_features != None):
-        train_features = train_features.drop(drop_features, axis = 1)
-        test_features = test_features.drop(drop_features, axis = 1)   
+        merged_df = merged_df.drop(drop_features, axis = 1)
         for element in drop_features:
             features_list.remove(element)
     
-    #Train and fit the model
-    rf = RandomForestRegressor(n_estimators = estimators, random_state = rdm_state)
-    rf.fit(train_features, train_target)
-
-    #Make predictions and calculate error
-    predictions = rf.predict(test_features)
-
-    #Print the mean absolute error
+    #Train and fit model
+    gb = GradientBoostingRegressor(n_estimators = estimators, random_state = rdm_state).fit(train_features, train_target)
+    
+    #Create an array of predictions for testing data
+    predictions = gb.predict(test_features)
+    
+    #Print the means absolute error
     mean_abs_error = mean_absolute_error(test_target, predictions)
     print("\nMean Absolute Error: ", mean_abs_error, " kg/m^3.")
 
@@ -129,14 +120,13 @@ def run_random_forest(data, target_variable, features = all, drop_features = Non
     score = r2_score(test_target, predictions)
     print("Score: ", score)
 
-    #Examine feature importances
-    importances = list(rf.feature_importances_)
+    #Print feature importances
+    importances = list(gb.feature_importances_)
     feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(features_list, importances)]
     feature_importances = sorted(feature_importances, key = lambda x: x[1], reverse = True)
 
     [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
     
-
     #
     #
     #Plot Data if user specifies that they want a graph
@@ -189,11 +179,12 @@ def run_random_forest(data, target_variable, features = all, drop_features = Non
         plt.ylabel("400 km Density")
         plt.title("Actual and Predicted Values of\nRandom Forest for 400km Density")
         plt.legend()
-    
-    
-    
-    
-    
-    
-    
-    
+            
+            
+            
+            
+            
+            
+            
+            
+            

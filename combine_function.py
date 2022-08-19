@@ -14,30 +14,37 @@ import datetime as dt
 import glob
 from pathlib import Path
 
-#Function takes either a string filepath or dataframe from the read OMNI or read_GRACE_CHAMP
-#as its first two arguments and a string output file path as the third argument. 
-#It merges the two datasets together on the datetime column and saves it in a csv file at the given filepath
-#The function returns the merged dataframe
+#Function takes multiple data files or dataframes and combines them into one dataframe
+#Parameters:
+    #output_filepath: a filepath to store a csv file of the resulting dataframe
+    #*args: takes a variable number of parameters in the form of either a filepath or dataframe
+#Return: Function returns a dataframe of all the input data combined. 
+#Function also creates a csv file of the resulting dataframe at the inputted output filepath
 def combine(output_filepath, *args):
     print("Start combine")      
+    #Create dataframe using first input in the *args list
     if (type(args[0]) == pd.core.frame.DataFrame):
         merged_df = args[0]
     elif (type(args[0]) == str):
         merged_df = pd.read_csv(args[0])
-        
+    
+    #Convert Datetime column to datetime type
     merged_df["Datetime"] = merged_df["Datetime"].astype("datetime64[ns]")
 
+    #For loop combines all the rest of the input arguments with the first dataframe
     for element in args[1:]:
+        #Create a second dataframe from current input based on format
         if (type(element) == pd.core.frame.DataFrame):
             df2 = element
         elif (type(element) == str):
             df2 = pd.read_csv(element)
+        #Convert Datetime columns to datetime type
         df2["Datetime"] = df2["Datetime"].astype("datetime64[ns]")
+        #Merge newly created dataframe with the original dataframe
         merged_df = pd.merge(merged_df, df2, on = "Datetime", how = "outer")
         
-    print(merged_df)
     
-    #Convert datetime to separate numerical columns
+    #Create separate numerical columns with datetime values
     merged_df["year"] = merged_df["Datetime"].dt.year
     merged_df["month"] = merged_df["Datetime"].dt.month
     merged_df["day"] = merged_df["Datetime"].dt.day
@@ -47,21 +54,18 @@ def combine(output_filepath, *args):
 
     #Drop datetime column to avoid datetime type error
     merged_df.sort_values(by = ["Datetime"])
-    print(merged_df)
-   # merged_df = merged_df.drop("Datetime", axis = 1)
     
     #Remove any rows with NaN values
-    print(merged_df)
     merged_df = merged_df.dropna(axis = 0, how = "any")
-    print(merged_df)
-    
+
+    #Createa a csv file with combined data
     merged_df.to_csv(output_filepath, index = False)
     
     print("Combine finished")
     
     return merged_df
 
-#Function has same purpose as combine function but keeps a datetime column
+#Function has same purpose as combine function but doesn't create new columns for individual datetime values
 def combine_wdatetime(output_filepath, *args):
     print("Start combine")      
     if (type(args[0]) == pd.core.frame.DataFrame):
@@ -71,6 +75,7 @@ def combine_wdatetime(output_filepath, *args):
         
     merged_df["Datetime"] = merged_df["Datetime"].astype("datetime64[ns]")
 
+    #Merge all input data
     for element in args[1:]:
         if (type(element) == pd.core.frame.DataFrame):
             df2 = element

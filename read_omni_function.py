@@ -14,6 +14,7 @@ import glob
 
 #Function takes path of input data folder, path of file to be outputted to, 
 #a boolean to remove bad values, and a percentage threshold as parameters
+
 #It creates a csv data file at the specified output filepath and returns
 #the output filepath
 def read_omni(input_path, output_filepath, remove_bad = True, percentage = 0.25):
@@ -49,7 +50,6 @@ def read_omni(input_path, output_filepath, remove_bad = True, percentage = 0.25)
     print("OMNI finished")
     
     return output_filepath
-
 
     
     
