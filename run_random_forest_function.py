@@ -8,7 +8,7 @@ Created on Thu Jul 14 09:19:54 2022
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime as dt
-from gradient import create_gradient
+#from gradient import create_gradient
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
