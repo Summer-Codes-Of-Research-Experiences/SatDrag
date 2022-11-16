@@ -177,7 +177,7 @@ def run_random_forest(data, target_variable, features = all, drop_features = Non
         prediction_data = prediction_data.sort_values(by = "dates")
         prediction_data["predictions"] = prediction_data["predictions"] / (10**12)
     
-        #Plot the true values in blue
+        #Plot the true values in blues
         plt.plot(true_data["date"], true_data["actual"], "b-", label = "actual")
         #Plot predicted values in magenta
         plt.plot(prediction_data["dates"], prediction_data["predictions"], "mo", label = "predicted", markersize = 3)
